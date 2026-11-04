@@ -1,0 +1,94 @@
+[
+  {
+    "id": "dining_chair_02",
+    "type": "model",
+    "source": "https://polyhaven.com/a/dining_chair_02",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "fern_02",
+    "type": "model",
+    "source": "https://polyhaven.com/a/fern_02",
+    "license": "CC0",
+    "resolution": "1k"
+  },
+  {
+    "id": "rough_linen",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/rough_linen",
+    "license": "CC0",
+    "resolution": "1k"
+  },
+  {
+    "id": "potted_plant_02",
+    "type": "model",
+    "source": "https://polyhaven.com/a/potted_plant_02",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "throw_pillows_01",
+    "type": "model",
+    "source": "https://polyhaven.com/a/throw_pillows_01",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "plastered_wall_04",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/plastered_wall_04",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "wood_floor",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/wood_floor",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "urban_courtyard_02",
+    "type": "HDR environment",
+    "source": "https://polyhaven.com/a/urban_courtyard_02",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "potted_plant_01",
+    "type": "model",
+    "source": "https://polyhaven.com/a/potted_plant_01",
+    "license": "CC0",
+    "resolution": "2k"
+  },
+  {
+    "id": "tree_small_02",
+    "type": "model",
+    "source": "https://polyhaven.com/a/tree_small_02",
+    "license": "CC0",
+    "resolution": "1k",
+    "processing": "Geometry simplified for browser delivery with glTF Transform and meshoptimizer. Source textures retained."
+  },
+  {
+    "id": "brick_wall_006",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/brick_wall_006",
+    "license": "CC0",
+    "resolution": "1k"
+  },
+  {
+    "id": "cobblestone_floor_01",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/cobblestone_floor_01",
+    "license": "CC0",
+    "resolution": "1k"
+  },
+  {
+    "id": "concrete_wall_008",
+    "type": "surface",
+    "source": "https://polyhaven.com/a/concrete_wall_008",
+    "license": "CC0",
+    "resolution": "1k"
+  }
+]

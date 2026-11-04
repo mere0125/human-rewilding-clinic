@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="An inhabitable study of Room 001 for The Human Rewilding Clinic, by Mere Cui.">
+  <title>Room 001 - The Human Rewilding Clinic</title>
+  <link rel="stylesheet" href="./styles.css?v=5">
+  <script type="importmap">
+  {"imports":{
+    "three":"https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/",
+    "three/examples/jsm/":"https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/",
+    "three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
+  }}
+  </script>
+</head>
+<body>
+  <canvas id="scene" tabindex="0" aria-label="Three dimensional interior of Room 001. Drag to look around; use arrow keys or scroll to move."></canvas>
+  <div id="loading" aria-live="polite">
+    <div class="loading-title">Room 001</div>
+    <p id="loadText">Preparing the room</p>
+    <div class="load-track"><div id="loadProgress"></div></div>
+  </div>
+  <header class="topbar">
+    <div class="identity"><span>The Human Rewilding Clinic</span><h1 id="viewTitle">Room 001</h1></div>
+    <nav class="views" aria-label="Model view">
+      <button class="view active" data-view="interior">Inside the room</button>
+      <button class="view" data-view="plan">Dimensioned plan</button>
+      <button class="view" data-view="erc">ERC-01</button>
+    </nav>
+  </header>
+  <div class="room-caption" id="roomCaption"><span>Constructed case</span><span>East window</span><span>3.60 × 3.20 × 2.70 m</span></div>
+  <aside class="study-controls">
+    <button id="panelToggle" class="panel-title" aria-expanded="false">Room settings <span>+</span></button>
+    <div id="settings" hidden>
+      <label><span>Window opening</span><output id="openingValue">24°</output><input id="opening" type="range" min="0" max="65" value="24" aria-label="Window opening angle"></label>
+      <label><span>Daylight</span><output id="lightValue">Morning</output><input id="light" type="range" min="0" max="100" value="58" aria-label="Daylight brightness"></label>
+      <p class="settings-note">Light and geometry study. The model does not calculate ventilation or thermal performance.</p>
+    </div>
+  </aside>
+  <footer class="bottom-bar">
+    <div id="positions" class="positions" aria-label="Room viewpoints">
+      <button data-position="door" class="active">At the door</button>
+      <button data-position="window">By the window</button>
+      <button data-position="bed">Beside the bed</button>
+      <button data-position="plant">Plant detail</button>
+      <button data-position="overview">Room overview</button>
+    </div>
+    <div class="tools">
+      <button id="refine" aria-pressed="false" title="Accumulates light samples while the camera is still. This view takes time to resolve.">Progressive light</button>
+      <button id="clean" aria-pressed="false">Full view</button>
+      <button id="save">Save image</button>
+    </div>
+  </footer>
+  <p id="gesture" class="gesture">Drag to look around. Scroll or use the arrow keys to move.</p>
+  <div id="renderStatus" aria-live="polite"></div>
+  <button id="returnUi" hidden>Show controls</button>
+  <details class="credits"><summary>Model notes</summary><p>Room dimensions and configuration are constructed. Plant, chair and pillow geometry, surface textures and the courtyard lighting panorama are from <a href="https://polyhaven.com/license" target="_blank" rel="noreferrer">Poly Haven</a>, used under CC0. The room, window, draped textiles and ERC-01 are modeled for this study.</p></details>
+  <div id="linkedState" aria-live="polite" hidden><span id="linkedSource"></span><strong id="linkedTemperature"></strong><span id="linkedOpening"></span></div>
+  <div id="chamberNote" hidden><span>ERC-01 scale study</span><strong>Body and enclosure</strong><span>Not part of the room calculation</span></div>
+  <script type="module" src="./app.js?v=5"></script>
+</body>
+</html>
