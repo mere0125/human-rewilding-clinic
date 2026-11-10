@@ -1,4 +1,4 @@
-import {mountClinic} from './clinic-ui.mjs';
+import {mountClinic} from './clinic-ui.mjs?v=14';
 import {CASE,volume,clearArea} from './case.mjs';
 import {makeDemo,metrics,classify,simulate,toCSV,parseCSV,HOUR} from './engine.mjs';
 import {PLANS,EMPTY_REVIEW,LOCAL_PLACES,initialSettings,calculateStudy} from './study.mjs';
@@ -271,6 +271,7 @@ addEventListener('message',e=>{
   if(e.data?.type==='clinic-spatial-view'&&view!==e.data.view)setView(e.data.view);
   if(e.data?.type==='clinic-place')openPlace(e.data.place);
   if(e.data?.type==='clinic-patient-pause')clinicSpace?.pauseTrial();
+  if(e.data?.type==='clinic-view-image'&&e.data.bytes instanceof ArrayBuffer)download(view==='clinic'?'Clinic-spatial-study.png':'Room-001-'+view+'.png',e.data.bytes,'image/png');
   if(e.data?.type==='clinic-relation')openRelation(e.data.node);
   if(e.data?.type==='clinic-part'){openPane('case',{keepPlan:true,keepView:true});$$('[data-part]').forEach(b=>b.classList.toggle('active',b.dataset.part===e.data.part));}
 });

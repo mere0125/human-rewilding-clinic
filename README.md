@@ -32,6 +32,8 @@ Imported files and review responses are processed in the browser. This static si
 
 The Clinic adds a 15.6 by 10.8 metre spatial proposal with consultation, environmental trial, and operations spaces. The ground-floor drawing and model use the same geometry register. Three-dimensional parts include a clear sliding leaf with 1.10 m travel, louvers between zero and seventy-five degrees, and a removable mesh cassette. These are movable architectural mechanisms; the Clinic room has no thermal, airflow, filtration, microbial or health simulation.
 
+The current architectural iteration uses a shallow tailored canopy, fine aluminium edges, pleated membranes, a honed ivory floor and a three-part padded body platform. Exterior, cutaway and interior viewpoints share the same model. The Clinic uses a neutral reflection environment; the patient home retains its original lighting. Save view exports a clean PNG of the model from the current camera.
+
 The patient gives consent, begins the rehearsal, and may pause or end it. A physical pause control remains a patient action even when the viewer is using the staff perspective. Staff can revise the artwork's classification thresholds with a reason and a visible version history, but cannot restart a paused patient trial. The perspective switch is a demonstration, not authentication. The public case window shows only Room 001. The Clinic rehearsal is held in page memory and clears on reload; ending it locks apparatus changes and rule revisions. Export is explicit. The existing home permission review retains its separate browser-local storage.
 
 The patient-home thermal calculations remain unchanged. Clinic monitors replay the source home record, not the Clinic's environmental conditions or a selected future scenario.
