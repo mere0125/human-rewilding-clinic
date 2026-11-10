@@ -1,6 +1,6 @@
 # The Human Rewilding Clinic
 
-An interactive room study by Mere Cui, developed for Computational Design Practices Colloquium 2.
+An interactive Clinic and room study by Mere Cui, developed for Computational Design Practices Colloquium 2.
 
 The Department of Environmental Variability follows one constructed room case through its environmental record, an authored Clinic classification, four operating comparisons, and a local permission review.
 
@@ -27,6 +27,14 @@ Open http://127.0.0.1:4173/ in a browser.
 The source record is generated. Only Room 001 has a thermal model. Neighbouring places are constructed context, not additional monitored rooms. The trial classification is authored for this artwork and has no validated clinical status. Thermal energy is not electrical consumption. No health benefit or independent field validation is claimed.
 
 Imported files and review responses are processed in the browser. This static site has no application server or shared patient database. Three.js loads from jsDelivr.
+
+## Clinic architectural study
+
+The Clinic adds a 15.6 by 10.8 metre spatial proposal with consultation, environmental trial, and operations spaces. The ground-floor drawing and model use the same geometry register. Three-dimensional parts include a clear sliding leaf with 1.10 m travel, louvers between zero and seventy-five degrees, and a removable mesh cassette. These are movable architectural mechanisms; the Clinic room has no thermal, airflow, filtration, microbial or health simulation.
+
+The patient gives consent, begins the rehearsal, and may pause or end it. A physical pause control remains a patient action even when the viewer is using the staff perspective. Staff can revise the artwork's classification thresholds with a reason and a visible version history, but cannot restart a paused patient trial. The perspective switch is a demonstration, not authentication. The public case window shows only Room 001. The Clinic rehearsal is held in page memory and clears on reload; ending it locks apparatus changes and rule revisions. Export is explicit. The existing home permission review retains its separate browser-local storage.
+
+The patient-home thermal calculations remain unchanged. Clinic monitors replay the source home record, not the Clinic's environmental conditions or a selected future scenario.
 
 ## Checks
 

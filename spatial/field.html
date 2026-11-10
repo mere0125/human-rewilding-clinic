@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Courtyard study</title>
+<title>Clinic architectural study</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#e9e8df;font-family:"Helvetica Neue",Arial,sans-serif;color:#25372f}canvas{width:100%;height:100%;display:block;outline:none;touch-action:none}.loading{position:absolute;inset:0;display:grid;place-content:center;gap:12px;background:#e9e8df;z-index:8;padding:40px;transition:opacity .5s}.loading.done{opacity:0;pointer-events:none}.loading strong{font-size:23px;font-weight:400}.loading span{font-size:12px;color:#6c756c}.loading progress{width:180px;height:2px;accent-color:#496450;border:0}.world-label{position:absolute;left:0;top:0;transform:translate(-50%,-100%);border:0;border-left:1px solid #47644e;background:rgba(247,248,240,.92);color:#263d30;padding:8px 12px 8px 11px;text-align:left;font:12px "Helvetica Neue",Arial,sans-serif;box-shadow:0 3px 16px #22372b12;cursor:pointer;max-width:180px;white-space:nowrap}.world-label:after{content:"";position:absolute;left:0;top:100%;width:1px;height:25px;background:#47644e88}.world-label span{display:block;color:#727a6e;font-size:10px;margin-top:3px}.world-label:hover,.world-label:focus-visible,.world-label.selected{background:#dce5d5}.world-label[data-anchor=room]{border-left:3px solid #395c45}.world-label[hidden],[hidden]{display:none!important}.canvas-note{position:absolute;bottom:14px;left:18px;pointer-events:none;font-size:10px;color:#627061;margin:0;background:#e9ece1dc;padding:5px 7px}.fail{font-size:14px;line-height:1.6;max-width:340px}.retry{width:max-content;background:transparent;border:1px solid #9aa790;font:inherit;padding:7px 12px;cursor:pointer}@media(prefers-reduced-motion:reduce){.loading{transition:none}}@media(max-width:600px){.world-label{font-size:11px;padding:6px 8px}.world-label span{font-size:9px}.canvas-note{font-size:9px;left:12px;bottom:8px}}
 .network-edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}.network-labels{position:absolute;inset:0;pointer-events:none;z-index:3}.relation-node{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;text-align:left;border:1px solid #acbbae;border-left:3px solid var(--node);background:#f1f4ecef;padding:9px 12px;color:#324c3b;font:11px "Helvetica Neue",Arial,sans-serif;box-shadow:0 3px 16px #203c2b13;max-width:177px;min-width:112px;cursor:pointer}.relation-node>span{display:block}.relation-node>small{display:block;font-size:9px;color:#7b8a72;margin-top:4px;max-width:143px;line-height:1.3}.relation-node.selected{background:#dfe9d7;border-color:#7d9a74;box-shadow:0 3px 14px #17351f22}.anchor-leader{fill:none;stroke:#677d6980;stroke-width:.5;stroke-dasharray:2 3}.world-label{font-size:11px;border-left:1px solid #6d846d;box-shadow:0 2px 10px #273b2311;background:#f3f5edeb;padding:7px 10px}.world-label span{font-size:9px}.canvas-note{font-size:9px;left:auto;right:18px;bottom:13px;max-width:330px;text-align:right;background:#f3f5eddf;line-height:1.4}.loading{background:#d8dcd5}.loading strong{font-size:22px;letter-spacing:-.6px}.loading span{color:#73806d}.loading progress{accent-color:#4e6e52}.world-label:after{height:14px;background:#617c5e80}@media(max-width:600px){.relation-node{font-size:10px;min-width:88px;max-width:128px;padding:7px 8px}.relation-node>small{font-size:8px;max-width:105px}.canvas-note{right:12px;bottom:75px;max-width:220px;font-size:8px}.world-label{font-size:10px;max-width:140px}}
@@ -10,9 +10,9 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"}}</script>
 </head>
 <body>
-<canvas id="scene" tabindex="0" aria-label="Interactive courtyard and Room 001. Drag to rotate the courtyard or look around the room."></canvas>
+<canvas id="scene" tabindex="0" aria-label="Interactive Clinic, courtyard and patient room. Drag to rotate the model."></canvas>
 <svg id="networkEdges" class="network-edges" aria-hidden="true" hidden></svg><div id="networkLabels" class="network-labels" aria-label="Relations around Room 001" hidden></div>
-<div id="loading" class="loading" role="status"><strong>Opening the courtyard</strong><span id="loadText">Loading the room and its surroundings</span><progress id="loadProgress" max="1"></progress></div>
+<div id="loading" class="loading" role="status"><strong>Opening the Clinic</strong><span id="loadText">Loading the Clinic and the prepared home case</span><progress id="loadProgress" max="1"></progress></div>
 <button class="world-label" data-anchor="room">Room 001<span>Thermal study</span></button>
 <button class="world-label" data-anchor="clinic">Clinic desk<span>Case review</span></button>
 <button class="world-label" data-anchor="garden">Shared courtyard<span>Common ground</span></button>
@@ -25,5 +25,5 @@
 <button class="world-label" data-anchor="logger" hidden>Room record<span id="loggerTemperature">22.0°C</span></button>
 <button class="world-label" data-anchor="radiator" hidden>Conditioning<span id="conditioningState">No interval selected</span></button>
 <p id="canvasNote" class="canvas-note">Constructed neighbourhood, one modelled room</p>
-<script type="module" src="./field.js?v=7"></script>
+<script type="module" src="./field.js?v=10"></script>
 </body></html>

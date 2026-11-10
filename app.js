@@ -1,3 +1,4 @@
+import {mountClinic} from './clinic-ui.mjs';
 import {CASE,volume,clearArea} from './case.mjs';
 import {makeDemo,metrics,classify,simulate,toCSV,parseCSV,HOUR} from './engine.mjs';
 import {PLANS,EMPTY_REVIEW,LOCAL_PLACES,initialSettings,calculateStudy} from './study.mjs';
@@ -14,7 +15,8 @@ const register=values=>values.map(([a,b])=>'<div><dt>'+esc(a)+'</dt><dd>'+esc(b)
 const frame=$('#field');
 let record=makeDemo(),recordName='Seven-day demonstration',imported=false;
 let settings=initialSettings(),review={...EMPTY_REVIEW},audit={...CASE.audit},protocol={...CASE.protocol};
-let study,selectedPlan='record',cursor=56,spatialReady=false,view='neighbourhood',pane='admission',place='room',playing=null,compareTraces=false;
+let clinicSpace=null;
+let study,selectedPlan='record',cursor=56,spatialReady=false,view='clinic',pane='admission',place='room',playing=null,compareTraces=false;
 let sensitivityWorker=null,sensitivityResults=[],plotGeometry=null,relationLayer='all',relationNode=null;
 const reviewKey='clinic-room-001-review-v6';
 try{
@@ -25,12 +27,13 @@ const send=d=>{if(spatialReady)frame.contentWindow.postMessage(d,location.origin
 const condition=()=>selectedPlan==='record'?{rows:record,metrics:study.recordMetrics}:study.conditions[selectedPlan]||study.conditions.baseline;
 const planName=()=>selectedPlan==='record'?(imported?'Imported case record':'Case record'):selectedPlan==='reviewed'?'Reviewed operation':PLANS.find(p=>p.id===selectedPlan)?.name||'Existing operation';
 function setView(next){
+  if(next!=='clinic')clinicSpace?.leave();
   view=next;$$('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));
   document.body.dataset.view=next;
-  $('#viewCaption').textContent=({neighbourhood:'Courtyard block',room:'Room 001',section:'Room 001, architectural section',plan:'Room 001, dimensioned plan',network:'Relations around Room 001'})[next];
-  $('#viewpoints').hidden=next!=='room';
+  $('#viewCaption').textContent=({clinic:'The Clinic, Environmental Variability',neighbourhood:'Courtyard block',room:'Room 001',section:'Room 001, architectural section',plan:'Room 001, dimensioned plan',network:'Relations around Room 001'})[next];
+  $('#viewpoints').hidden=next!=='room';$('#clinicNavigation').hidden=next!=='clinic';$('#clinicViewTools').hidden=next!=='clinic';
   $('#neighbourhoodViewpoints').hidden=next!=='neighbourhood';
-  $('#relationTools').hidden=next!=='network';$('#openNetwork').hidden=next==='network';
+  $('#relationTools').hidden=next!=='network';$('#openNetwork').hidden=['network','clinic'].includes(next);
   $('#spatialGesture').textContent=next==='neighbourhood'?'Drag to turn the model. Select a place to visit.':next==='room'?'Drag to look around. Scroll or use the arrow keys to move.':'The plan and interior share the same geometry.';
   send({type:'clinic-view',view:next});
   if(next==='network')send({type:'clinic-network-layer',layer:relationLayer});
@@ -40,6 +43,7 @@ function setPlan(id){
   renderComparison();drawPlot();updateCursor();
 }
 function openPane(next,{keepPlan=false,keepView=false}={}){
+  if(next!=='clinic'&&view==='clinic'){clinicSpace?.leave();setView('room');}
   pane=next;place='room';relationNode=null;document.body.dataset.pane=next;
   $$('.pane').forEach(p=>p.hidden=p.id!=='pane-'+next);
   $('.desk-nav').hidden=false;$$('[data-pane]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pane===next)));
@@ -52,6 +56,7 @@ function openPane(next,{keepPlan=false,keepView=false}={}){
   $('.desk-content').scrollTop=0;
 }
 function openPlace(id){
+  if(id==='clinic'){clinicSpace?.open('reception');return;}
   if(id==='room'){openPane('case');return;}
   place=id;setView('neighbourhood');
   $$('[data-place]').forEach(b=>b.classList.toggle('selected',b.dataset.place===id));
@@ -203,7 +208,7 @@ function renderSensitivity(){
   $('#sensitivityStatus').textContent='Completed. The ratio change ranges from '+fixed(min,3)+' to '+fixed(max,3)+'. This is a deterministic range of assumptions.';
 }
 function download(name,data,type){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
-function caseExport(){return {schema:'clinic-appointment-draft-08',appointment:{patient:'Fictional resident 001',reason:'Wants contact with outdoor conditions but has limited control of the room',visit:'Voluntary environmental consultation',recordScope:'One prepared room case',followUp:'Proposed one week after an agreed change; not scheduled or tested'},exported:new Date().toISOString(),case:CASE,geometry:{volume,clearArea},record:{name:recordName,provenance:imported?'Imported, not independently verified':'Generated weather and model-generated indoor temperature',rows:record},audit,protocol,settings,review:{...review,scope:'Fictional browser-local rehearsal'},metrics:study.recordMetrics,conditions:Object.fromEntries(Object.entries(study.conditions).map(([id,c])=>[id,{parameters:c.parameters,metrics:c.metrics}])),relations:{nodes:RELATION_NODES,edges:RELATION_EDGES},sensitivity:sensitivityResults,spatialScope:'Constructed neighbourhood. Only Room 001 has a thermal model. Daylight is illustrative.'};}
+function caseExport(){return {schema:'clinic-appointment-draft-08',appointment:{patient:'Fictional resident 001',reason:'Wants contact with outdoor conditions but has limited control of the room',visit:'Voluntary environmental consultation',recordScope:'One prepared room case',clinicRehearsal:clinicSpace?.exportRecord(),followUp:'Proposed one week after an agreed change; not scheduled or tested'},exported:new Date().toISOString(),case:CASE,geometry:{volume,clearArea},record:{name:recordName,provenance:imported?'Imported, not independently verified':'Generated weather and model-generated indoor temperature',rows:record},audit,protocol,settings,review:{...review,scope:'Fictional browser-local rehearsal'},metrics:study.recordMetrics,conditions:Object.fromEntries(Object.entries(study.conditions).map(([id,c])=>[id,{parameters:c.parameters,metrics:c.metrics}])),relations:{nodes:RELATION_NODES,edges:RELATION_EDGES},sensitivity:sensitivityResults,spatialScope:'Constructed neighbourhood. Only Room 001 has a thermal model. Daylight is illustrative.'};}
 function exportCase(){download('Room-001-case-record.json',JSON.stringify(caseExport(),null,2),'application/json');}
 function printCase(){
   const m=study.conditions.combined.metrics,c=classify(study.recordMetrics,audit,protocol);
@@ -214,7 +219,7 @@ function printCase(){
   $('#printDocument').insertAdjacentHTML('beforeend','<h2>Follow-up proposal</h2><p>One week after an agreed change, compare a new room record and the resident’s account of the experience. This follow-up has not been scheduled or tested.</p>');window.print();
 }
 
-$$('[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.view==='room'||b.dataset.view==='plan')openPane('case',{keepPlan:true,keepView:true});setView(b.dataset.view);});
+$$('[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.view==='clinic'){clinicSpace?.open('reception');return;}if(['room','plan','section'].includes(b.dataset.view)||pane==='clinic')openPane('case',{keepPlan:true,keepView:true});setView(b.dataset.view);});
 $$('[data-place]').forEach(b=>b.onclick=()=>openPlace(b.dataset.place));
 $$('[data-pane]').forEach(b=>b.onclick=()=>openPane(b.dataset.pane,{keepView:true}));
 $$('[data-part]').forEach(b=>b.onclick=()=>inspect(b.dataset.part));
@@ -235,7 +240,8 @@ let scrub=false;
 function scrubAt(e){const r=$('#temperaturePlot').getBoundingClientRect(),g=plotGeometry;if(!g)return;const fraction=Math.max(0,Math.min(1,((e.clientX-r.left)/r.width*g.width-g.left)/(g.width-g.left-g.right)));cursor=Math.round(fraction*(record.length-2));updateCursor();}
 $('#temperaturePlot').addEventListener('pointerdown',e=>{stop();scrub=true;e.currentTarget.setPointerCapture(e.pointerId);scrubAt(e);});$('#temperaturePlot').addEventListener('pointermove',e=>{if(scrub)scrubAt(e);});$('#temperaturePlot').addEventListener('pointerup',()=>scrub=false);$('#temperaturePlot').addEventListener('pointercancel',()=>scrub=false);
 $('#auditForm').onsubmit=e=>{e.preventDefault();audit=Object.fromEntries(new FormData(e.target));renderMethods();$('#auditStatus').textContent='Survey entries updated. The temperature record is unchanged.';};
-$('#protocolForm').onsubmit=$('#clinicCriteriaForm').onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target));protocol={...protocol,ratio:Number(v.ratio),duty:Number(v.duty)/100,controls:Number(v.controls)};renderMethods();updateCursor();};
+$('#protocolForm').onsubmit=$('#clinicCriteriaForm').onsubmit=e=>{e.preventDefault();$('#methodDialog').close();clinicSpace?.open('records');};
+$$('[data-go-clinic-records]').forEach(b=>b.onclick=()=>{$('#methodDialog').close();clinicSpace?.open('records');});
 $('#operatingForm').onsubmit=e=>{
   e.preventDefault();const v=Object.fromEntries(new FormData(e.target)),next={...settings};
   for(const key of ['morningStart','morningEnd','eveningStart','eveningEnd']){const [h,m]=v[key].split(':').map(Number);next[key]=(h===0&&m===0&&key.endsWith('End'))?24:h+m/60;}
@@ -260,10 +266,11 @@ $('#csvInput').onchange=async e=>{
 $('#restoreRecord').onclick=()=>{stop();record=makeDemo();recordName='Seven-day demonstration';imported=false;cursor=56;selectedPlan='record';resetReview();recompute();$('#importStatus').textContent='Restored the generated demonstration record.';};
 addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame.contentWindow)return;
-  if(e.data?.type==='clinic-viewer-ready'){spatialReady=true;$('#sceneStatus').textContent='Constructed spatial study';setView(view);if(pane==='admission')send({type:'clinic-neighbourhood-camera',camera:'entrance'});updateCursor();}
+  if(e.data?.type==='clinic-viewer-ready'){spatialReady=true;$('#sceneStatus').textContent='Constructed spatial study';setView(view);if(view==='clinic')clinicSpace?.sync();else if(pane==='admission')send({type:'clinic-neighbourhood-camera',camera:'entrance'});updateCursor();}
   if(e.data?.type==='clinic-viewer-error')$('#sceneStatus').textContent=e.data.message;
   if(e.data?.type==='clinic-spatial-view'&&view!==e.data.view)setView(e.data.view);
   if(e.data?.type==='clinic-place')openPlace(e.data.place);
+  if(e.data?.type==='clinic-patient-pause')clinicSpace?.pauseTrial();
   if(e.data?.type==='clinic-relation')openRelation(e.data.node);
   if(e.data?.type==='clinic-part'){openPane('case',{keepPlan:true,keepView:true});$$('[data-part]').forEach(b=>b.classList.toggle('active',b.dataset.part===e.data.part));}
 });
@@ -283,4 +290,12 @@ $('#reviseReview').onclick=()=>openPane('review',{keepPlan:true,keepView:true});
 
 new ResizeObserver(()=>{if(study)drawPlot();}).observe($('#temperaturePlot'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-setView(view);recompute();openPlace('clinic');
+clinicSpace=mountClinic({
+  send,
+  pause:stop,
+  activate(){pane='clinic';place='clinic';relationNode=null;document.body.dataset.pane='clinic';$$('.pane').forEach(p=>p.hidden=p.id!=='pane-clinic');$('.desk-nav').hidden=true;setView('clinic');$('.desk-content').scrollTop=0;},
+  openCase(){openPane('case');},
+  context(){const r=record[Math.max(0,Math.min(cursor,record.length-2))];return {indoor:r.indoor,outdoor:r.outdoor,source:imported?'Imported home record':'Generated home record',classification:classify(study.recordMetrics,audit,protocol).title};},
+  applyCriteria(value){protocol={...protocol,...value};if(study){renderMethods();renderDischarge();updateCursor();}}
+});
+setView(view);recompute();clinicSpace.open('reception');

@@ -8,6 +8,8 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {loadSurfaces} from './surfaces.js';
 import {makeRoom} from './room.js';
+import {makeClinic} from './clinic.js';
+import {CLINIC} from '../clinic-spec.mjs';
 import {makeNeighbourhood} from './neighbourhood.js';
 import {CASE} from '../case.mjs';
 import {createRelationView} from './relation-view.js';
@@ -38,13 +40,13 @@ const windowFill=new THREE.RectAreaLight(0xe6e7df,10,1.12,1.45);windowFill.posit
 const bounce=new THREE.PointLight(0xd9c9aa,.3,5,2);bounce.position.set(-.6,.8,.1);scene.add(bounce);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0xe3e1d7,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.36;ground.receiveShadow=true;scene.add(ground);
 
-let room,neighbourhood,ready=false,view='neighbourhood',selected='room',sample=null,openingTarget=0;
+let room,neighbourhood,clinic,clinicState={},clinicPose='overview',ready=false,view='clinic',selected='room',sample=null,openingTarget=0;
 let yaw=0,pitch=0,drag=null,lastFrame=0,lookTween=null,neighbourhoodCamera='courtyard';
 const keys=new Set();
 const labels=[...document.querySelectorAll('[data-anchor]')];
 function refreshWorldLabels(){
   const close={courtyard:['room','garden','weather'],entrance:['clinic'],nursery:['nursery']};
-  const allowed=view==='neighbourhood'?(neighbourhoodCamera==='overview'?['room','clinic','garden','office','maintenance','archive','weather']:(close[neighbourhoodCamera]||close.courtyard)):['room','section'].includes(view)?['window','logger','radiator']:[];
+  const allowed=view==='clinic'?[]:view==='neighbourhood'?(neighbourhoodCamera==='overview'?['room','clinic','garden','office','maintenance','archive','weather']:(close[neighbourhoodCamera]||close.courtyard)):['room','section'].includes(view)?['window','logger','radiator']:[];
   labels.forEach(l=>l.hidden=!allowed.includes(l.dataset.anchor));
 }
 const logCanvas=document.createElement('canvas');logCanvas.width=256;logCanvas.height=128;const logTexture=new THREE.CanvasTexture(logCanvas);logTexture.colorSpace=THREE.SRGBColorSpace;
@@ -74,6 +76,8 @@ function choosePart(part){
 function applySample(value){
   sample=value;if(!ready)return;
   relations.update(value);
+  if(clinic)clinic.setState({...clinicState,role:clinicState.role||'patient',opening:clinicState.opening||0,shade:clinicState.shade??.45});
+  if(view==='clinic')return;
   openingTarget=value.window===null||value.window<=.5?0:-Math.PI/4;
   const ctx=logCanvas.getContext('2d');ctx.fillStyle='#bdc9ad';ctx.fillRect(0,0,256,128);ctx.fillStyle='#334932';ctx.font='60px Arial';ctx.textAlign='center';ctx.fillText(value.indoor.toFixed(1),128,86);logTexture.needsUpdate=true;room.loggerDisplay.material.map=logTexture;room.loggerDisplay.material.color.set(0xffffff);room.loggerDisplay.material.needsUpdate=true;
   $('#windowState').textContent=value.window===null?'State not recorded':value.window>.5?'Open in this interval':'Closed in this interval';
@@ -95,16 +99,22 @@ function applySample(value){
 }
 function setView(next){
   if(!ready)return;lookTween=null;view=next;
-  orbit.enabled=['neighbourhood','network','section'].includes(next);activeCamera=next==='plan'?planCamera:camera;
+  if(next!=='clinic'){sun.color.set(0xffe4bd);scene.environmentIntensity=.58;Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20});sun.shadow.camera.updateProjectionMatrix();sun.target.position.set(3,0,.3);}
+  orbit.enabled=['neighbourhood','network','section','clinic'].includes(next);activeCamera=next==='plan'?planCamera:camera;
   renderPass.camera=activeCamera;ao.camera=activeCamera;ao.enabled=['room','section'].includes(next);
-  neighbourhood.root.visible=!['plan','section'].includes(next);ground.visible=!['plan','section'].includes(next);
+  neighbourhood.root.visible=!['plan','section','clinic'].includes(next);ground.visible=!['plan','section'].includes(next);clinic.root.visible=next==='clinic';
   canvas.style.opacity=next==='network'?'.58':'1';canvas.style.filter=next==='network'?'saturate(.4)':'none';
   room.ceiling.visible=next==='room';room.cutawayWalls.forEach(o=>o.visible=true);room.eastWall.visible=true;
   renderer.clippingPlanes=next==='section'?[new THREE.Plane(new THREE.Vector3(0,0,-1),.8)]:[];
-  room.root.visible=true;windowFill.visible=next!=='plan';bounce.visible=next==='room';
+  room.root.visible=next!=='clinic';windowFill.visible=next!=='plan';bounce.visible=next==='room';
   dimensionLines.visible=next==='plan';
   relations.show(next==='network');
-  if(next==='neighbourhood'||next==='network'){
+  if(next==='clinic'){
+    renderer.clippingPlanes=[];ao.enabled=false;windowFill.visible=false;bounce.visible=false;scene.background.set(0xdce1db);renderer.toneMappingExposure=1.12;scene.environmentIntensity=.78;sun.color.set(0xf4f7ef);sun.intensity=3.0;sun.position.set(-10,19,10);ambient.intensity=.85;
+    Object.assign(sun.shadow.camera,{left:-13,right:13,top:12,bottom:-12});sun.shadow.camera.updateProjectionMatrix();sun.target.position.set(0,0,0);
+    visitClinic(clinicPose);$('#canvasNote').textContent='Clinic architectural study. Room 001 remains the separate thermal model.';
+  }else if(next==='neighbourhood'||next==='network'){
+    sun.color.set(0xffe4bd);scene.environmentIntensity=.58;Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20});sun.shadow.camera.updateProjectionMatrix();sun.target.position.set(3,0,.3);
     orbit.minDistance=13;orbit.maxDistance=85;camera.fov=40;orbit.target.copy(neighbourhood.centre);const fit=Math.max(1,1.20/camera.aspect);camera.position.copy(neighbourhood.centre).add(new THREE.Vector3(27,24,33).multiplyScalar(fit));orbit.update();scene.background.set(0xd8dcd5);renderer.toneMappingExposure=1.04;
     $('#canvasNote').textContent=next==='network'?'Named dependencies around one case. Care relations are contextual.':'Constructed neighbourhood. Only Room 001 has a thermal model.';
     if(next==='neighbourhood')visitNeighbourhood(neighbourhoodCamera);
@@ -120,6 +130,21 @@ function setView(next){
   refreshWorldLabels();
   tell({type:'clinic-spatial-view',view:next});
 }
+function visitClinic(id='overview'){
+  if(!ready||!clinic)return;
+  clinicPose=CLINIC.cameras[id]?id:'overview';
+  const p=CLINIC.cameras[clinicPose];camera.fov=p.fov;orbit.enabled=true;orbit.minDistance=.55;orbit.maxDistance=55;orbit.minPolarAngle=.12;orbit.maxPolarAngle=Math.PI*.49;
+  orbit.target.set(...p.at);camera.position.set(...p.eye);
+  if(camera.aspect<1)camera.position.sub(orbit.target).multiplyScalar(clinicPose==='overview'?1.45:1.12).add(orbit.target);
+  camera.updateProjectionMatrix();orbit.update();clinic.setCutaway(clinicPose==='overview');ao.enabled=clinicPose!=='overview';
+}
+const clinicRay=new THREE.Raycaster(),clinicPointer=new THREE.Vector2();
+canvas.addEventListener('click',e=>{
+  if(view!=='clinic'||!ready)return;
+  const b=canvas.getBoundingClientRect();clinicPointer.set((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1);clinicRay.setFromCamera(clinicPointer,camera);
+  if(clinicRay.intersectObjects(clinic.pickables||[],true).length)tell({type:'clinic-patient-pause'});
+});
+
 const dimensionLines=new THREE.Group();scene.add(dimensionLines);dimensionLines.visible=false;
 function dim(a,b){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);dimensionLines.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0x68715c})));}
 function dimLabel(value,x,z,rotation=0){const c=document.createElement('canvas');c.width=512;c.height=100;const g=c.getContext('2d');g.font='34px Arial';g.fillStyle='#43533e';g.textAlign='center';g.fillText(value,256,65);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const o=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));o.scale.set(1.8,.352,1);o.position.set(x,3.2,z);o.material.rotation=rotation;dimensionLines.add(o);}
@@ -130,8 +155,8 @@ THREE.DefaultLoadingManager.onProgress=(_url,loaded)=>{if(ready)return;$('#loadP
 async function start(){
   const [materials,hdr]=await Promise.all([loadSurfaces(renderer),new RGBELoader().loadAsync('./assets/urban_courtyard_02.hdr')]);
   hdr.mapping=THREE.EquirectangularReflectionMapping;scene.environment=hdr;scene.environmentIntensity=.58;scene.environmentRotation.y=1.35;
-  [room,neighbourhood]=await Promise.all([makeRoom(materials),makeNeighbourhood(materials,renderer)]);
-  scene.add(room.root,neighbourhood.root);ready=true;setView(view);if(sample)applySample(sample);
+  [room,neighbourhood,clinic]=await Promise.all([makeRoom(materials),makeNeighbourhood(materials,renderer),makeClinic(materials)]);
+  scene.add(room.root,neighbourhood.root,clinic.root);ready=true;setView(view);if(sample)applySample(sample);
   $('#loading').classList.add('done');$('#loading').setAttribute('aria-hidden','true');setTimeout(()=>{$('#loading').hidden=true;},650);tell({type:'clinic-viewer-ready'});
 }
 start().catch(error=>{console.error(error);$('#loading').innerHTML='<strong>The room could not finish loading</strong><span class="fail">A model or surface resource did not arrive. Reload the view to try again.</span><button class="retry">Reload the room</button>';$('.retry').onclick=()=>location.reload();tell({type:'clinic-viewer-error',message:'A spatial resource could not load.'});});
@@ -146,7 +171,8 @@ addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==parent)return;
   const d=e.data;
   if(d?.type==='clinic-sample'&&d.caseId===CASE.id&&Number.isFinite(d.sample?.indoor))applySample(d.sample);
-  if(d?.type==='clinic-view'&&['neighbourhood','room','plan','section','network'].includes(d.view))setView(d.view);
+  if(d?.type==='clinic-view'&&['neighbourhood','room','plan','section','network','clinic'].includes(d.view))setView(d.view);
+  if(d?.type==='clinic-space'){const changed=clinicPose!==d.camera;clinicState={...clinicState,...d};if(clinic)clinic.setState(clinicState);if(view!=='clinic')setView('clinic');if(changed)visitClinic(d.camera);}
   if(d?.type==='clinic-network-layer')relations.setLayer(d.layer);
   if(d?.type==='clinic-network-selection')relations.select(d.node);
   if(d?.type==='clinic-neighbourhood-camera'&&view==='neighbourhood')visitNeighbourhood(d.camera);
@@ -163,7 +189,7 @@ function move(dx,dz){
 }
 canvas.addEventListener('wheel',e=>{if(view!=='room')return;e.preventDefault();const s=Math.sign(e.deltaY)*-.10;move(Math.sin(yaw)*s,Math.cos(yaw)*s);},{passive:false});
 canvas.addEventListener('keydown',e=>{if(view!=='room')return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(e.key)){e.preventDefault();keys.add(e.key);}});addEventListener('keyup',e=>keys.delete(e.key));addEventListener('blur',()=>{keys.clear();drag=null;});
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();const half=Math.max(2.65,3.2/(w/h));planCamera.left=-half*w/h;planCamera.right=half*w/h;planCamera.top=half;planCamera.bottom=-half;planCamera.updateProjectionMatrix();if(ready&&['neighbourhood','network'].includes(view))setView(view);}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();const half=Math.max(2.65,3.2/(w/h));planCamera.left=-half*w/h;planCamera.right=half*w/h;planCamera.top=half;planCamera.bottom=-half;planCamera.updateProjectionMatrix();if(ready&&['neighbourhood','network'].includes(view))setView(view);else if(ready&&view==='clinic')visitClinic(clinicPose);}
 addEventListener('resize',resize);resize();
 function positionLabels(){
   const boxes=[];
@@ -184,6 +210,7 @@ function frame(now){
   requestAnimationFrame(frame);if(document.hidden||now-lastFrame<28)return;lastFrame=now;
   if(orbit.enabled)orbit.update();
   if(ready){
+    if(view==='clinic')clinic.step(Math.min(.08,(now-(frame.lastClinicTime||now-30))/1000));frame.lastClinicTime=now;
     room.leaf.rotation.y=THREE.MathUtils.lerp(room.leaf.rotation.y,openingTarget,.16);
     if(lookTween){const t=Math.min(1,(now-lookTween.start)/650),e=t*t*(3-2*t);camera.position.lerpVectors(lookTween.eye,lookTween.end,e);let dy=lookTween.yaw1-lookTween.yaw0;dy=Math.atan2(Math.sin(dy),Math.cos(dy));yaw=lookTween.yaw0+dy*e;pitch=THREE.MathUtils.lerp(lookTween.pitch0,lookTween.pitch1,e);updateLook();if(t===1)lookTween=null;}
     if(view==='room'&&!lookTween){let f=0,s=0;if(keys.has('w')||keys.has('ArrowUp'))f+=.035;if(keys.has('s')||keys.has('ArrowDown'))f-=.035;if(keys.has('a')||keys.has('ArrowLeft'))s-=.035;if(keys.has('d')||keys.has('ArrowRight'))s+=.035;if(f||s)move(Math.sin(yaw)*f+Math.cos(yaw)*s,Math.cos(yaw)*f-Math.sin(yaw)*s);}
