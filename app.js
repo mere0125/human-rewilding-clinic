@@ -14,7 +14,7 @@ const register=values=>values.map(([a,b])=>'<div><dt>'+esc(a)+'</dt><dd>'+esc(b)
 const frame=$('#field');
 let record=makeDemo(),recordName='Seven-day demonstration',imported=false;
 let settings=initialSettings(),review={...EMPTY_REVIEW},audit={...CASE.audit},protocol={...CASE.protocol};
-let study,selectedPlan='record',cursor=56,spatialReady=false,view='neighbourhood',pane='case',place='room',playing=null,compareTraces=false;
+let study,selectedPlan='record',cursor=56,spatialReady=false,view='neighbourhood',pane='admission',place='room',playing=null,compareTraces=false;
 let sensitivityWorker=null,sensitivityResults=[],plotGeometry=null,relationLayer='all',relationNode=null;
 const reviewKey='clinic-room-001-review-v6';
 try{
@@ -40,12 +40,12 @@ function setPlan(id){
   renderComparison();drawPlot();updateCursor();
 }
 function openPane(next,{keepPlan=false,keepView=false}={}){
-  pane=next;place='room';relationNode=null;
+  pane=next;place='room';relationNode=null;document.body.dataset.pane=next;
   $$('.pane').forEach(p=>p.hidden=p.id!=='pane-'+next);
   $('.desk-nav').hidden=false;$$('[data-pane]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pane===next)));
-  $('#deskTitle').textContent='Room 001';$('#deskKind').textContent=next==='review'?'Clinic desk, case review':'Room under study';
+  $('#deskTitle').textContent=next==='admission'?'Appointment 001':next==='discharge'?'Case 001':'Room 001';$('#deskKind').textContent=next==='admission'?'Clinic reception':next==='discharge'?'Consultation outcome':next==='review'?'Clinic desk, permission review':'Patient room model';if(next==='discharge')renderDischarge();
   $$('[data-place]').forEach(b=>b.classList.toggle('selected',b.dataset.place==='room'));
-  if(!keepView)setView('room');
+  if(!keepView)setView(next==='admission'?'neighbourhood':'room');
   if(next==='case'&&!keepPlan)setPlan('record');
   if(next==='comparison'&&selectedPlan==='record')setPlan('combined');
   if(next==='review'&&selectedPlan==='record')setPlan('combined');
@@ -56,9 +56,9 @@ function openPlace(id){
   place=id;setView('neighbourhood');
   $$('[data-place]').forEach(b=>b.classList.toggle('selected',b.dataset.place===id));
   if(id==='clinic'){
-    openPane('review',{keepPlan:true,keepView:true});place='clinic';
+    openPane('admission',{keepPlan:true,keepView:true});place='clinic';
     $$('[data-place]').forEach(b=>b.classList.toggle('selected',b.dataset.place==='clinic'));
-    $('#deskTitle').textContent='Clinic desk';$('#deskKind').textContent='Review of Room 001';$$('[data-neighbourhood-camera]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.neighbourhoodCamera==='entrance')));send({type:'clinic-neighbourhood-camera',camera:'entrance'});return;
+    $('#deskTitle').textContent='Clinic desk';$('#deskKind').textContent='Environmental consultation';$$('[data-neighbourhood-camera]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.neighbourhoodCamera==='entrance')));send({type:'clinic-neighbourhood-camera',camera:'entrance'});return;
   }
   const info=LOCAL_PLACES[id];if(!info)return;
   $$('.pane').forEach(p=>p.hidden=p.id!=='pane-place');$('.desk-nav').hidden=true;
@@ -175,7 +175,7 @@ function recompute({invalidateSensitivity=true}={}){
   $('#sourceCaption').textContent=imported?recordName+', New York display time':'Seven-day demonstration record, New York time';
   $('#recordQuality').textContent=fixed(study.recordMetrics.q.hours)+' valid hours';
   $('.desk-footer>span').textContent=imported?'Imported record, draft room':'Constructed case';
-  renderComparison();renderReview();renderMethods();drawPlot();
+  renderComparison();renderReview();renderMethods();renderDischarge();drawPlot();
   if(invalidateSensitivity){if(sensitivityWorker)sensitivityWorker.terminate();sensitivityWorker=null;sensitivityResults=[];$('#sensitivityPlot').innerHTML='';$('#sensitivityStatus').textContent='The grid runs when requested.';$('#runSensitivity').disabled=false;}
 }
 function stop(){if(playing)clearInterval(playing);playing=null;$('#play').textContent='Play record';$('#play').setAttribute('aria-pressed','false');}
@@ -203,15 +203,15 @@ function renderSensitivity(){
   $('#sensitivityStatus').textContent='Completed. The ratio change ranges from '+fixed(min,3)+' to '+fixed(max,3)+'. This is a deterministic range of assumptions.';
 }
 function download(name,data,type){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
-function caseExport(){return {schema:'clinic-local-draft-07',exported:new Date().toISOString(),case:CASE,geometry:{volume,clearArea},record:{name:recordName,provenance:imported?'Imported, not independently verified':'Generated weather and model-generated indoor temperature',rows:record},audit,protocol,settings,review:{...review,scope:'Fictional browser-local rehearsal'},metrics:study.recordMetrics,conditions:Object.fromEntries(Object.entries(study.conditions).map(([id,c])=>[id,{parameters:c.parameters,metrics:c.metrics}])),relations:{nodes:RELATION_NODES,edges:RELATION_EDGES},sensitivity:sensitivityResults,spatialScope:'Constructed neighbourhood. Only Room 001 has a thermal model. Daylight is illustrative.'};}
+function caseExport(){return {schema:'clinic-appointment-draft-08',appointment:{patient:'Fictional resident 001',reason:'Wants contact with outdoor conditions but has limited control of the room',visit:'Voluntary environmental consultation',recordScope:'One prepared room case',followUp:'Proposed one week after an agreed change; not scheduled or tested'},exported:new Date().toISOString(),case:CASE,geometry:{volume,clearArea},record:{name:recordName,provenance:imported?'Imported, not independently verified':'Generated weather and model-generated indoor temperature',rows:record},audit,protocol,settings,review:{...review,scope:'Fictional browser-local rehearsal'},metrics:study.recordMetrics,conditions:Object.fromEntries(Object.entries(study.conditions).map(([id,c])=>[id,{parameters:c.parameters,metrics:c.metrics}])),relations:{nodes:RELATION_NODES,edges:RELATION_EDGES},sensitivity:sensitivityResults,spatialScope:'Constructed neighbourhood. Only Room 001 has a thermal model. Daylight is illustrative.'};}
 function exportCase(){download('Room-001-case-record.json',JSON.stringify(caseExport(),null,2),'application/json');}
 function printCase(){
   const m=study.conditions.combined.metrics,c=classify(study.recordMetrics,audit,protocol);
-  $('#printDocument').innerHTML='<p>The Human Rewilding Clinic</p><h1>Room 001, operating proposal</h1><p class="print-source">Constructed institution. '+esc(imported?recordName:'Generated demonstration record')+'. '+esc(date(Date.now()))+'</p><h2>Room and evidence</h2><dl>'+register([['Room','3.60 × 3.20 × 2.70 m'],['Window','East, 1.50 × 1.20 m'],['Record',day(record[0].t)+' to '+day(record.at(-1).t)],['Current trial result',c.title]])+'</dl><h2>Proposed operation</h2><dl>'+register([['Opening',hour(settings.morningStart)+' to '+hour(settings.morningEnd)+' and '+hour(settings.eveningStart)+' to '+hour(settings.eveningEnd)],['Thermostat range',fixed(settings.deadband)+' K total around 22°C'],['Added ventilation',fixed(settings.extraACH)+' air changes per hour, assumed'],['Predicted thermal energy',fixed(m.energy)+' kWh'],['Predicted active time',pct(m.duty)]])+'</dl><h2>Review rehearsal</h2><dl>'+register([['Resident response',review.resident],['Window permission',review.opening],['Thermostat permission',review.thermostat]])+'</dl><p>'+esc(review.note)+'</p><p class="print-source">The model excludes solar gains, moisture, local airflow and health effects. Permission responses belong to a fictional local review. Actual site conditions and authority need independent assessment.</p>';
+  $('#printDocument').innerHTML='<p>The Human Rewilding Clinic</p><h1>Case 001, conditional environmental prescription</h1><p>Fictional resident: seeks more contact with outdoor conditions while having limited control of the room.</p><p class="print-source">Constructed institution. '+esc(imported?recordName:'Generated demonstration record')+'. '+esc(date(Date.now()))+'</p><h2>Room and evidence</h2><dl>'+register([['Room','3.60 × 3.20 × 2.70 m'],['Window','East, 1.50 × 1.20 m'],['Record',day(record[0].t)+' to '+day(record.at(-1).t)],['Current trial result',c.title]])+'</dl><h2>Proposed operation</h2><dl>'+register([['Opening',hour(settings.morningStart)+' to '+hour(settings.morningEnd)+' and '+hour(settings.eveningStart)+' to '+hour(settings.eveningEnd)],['Thermostat range',fixed(settings.deadband)+' K total around 22°C'],['Added ventilation',fixed(settings.extraACH)+' air changes per hour, assumed'],['Predicted thermal energy',fixed(m.energy)+' kWh'],['Predicted active time',pct(m.duty)]])+'</dl><h2>Review rehearsal</h2><dl>'+register([['Resident response',review.resident],['Window permission',review.opening],['Thermostat permission',review.thermostat]])+'</dl><p>'+esc(review.note)+'</p><p class="print-source">The model excludes solar gains, moisture, local airflow and health effects. Permission responses belong to a fictional local review. Actual site conditions and authority need independent assessment.</p>';
   const comparison='<h2>Operating comparisons</h2><table><thead><tr><th>Plan</th><th>Daily ratio</th><th>Active time</th><th>Thermal energy</th></tr></thead><tbody>'+PLANS.map(p=>{const x=study.conditions[p.id].metrics;return '<tr><td>'+p.name+'</td><td>'+fixed(x.ratio,3)+'</td><td>'+pct(x.duty)+'</td><td>'+fixed(x.energy)+' kWh</td></tr>';}).join('')+'</tbody></table>';
   const allowed=study.conditions.reviewed?.metrics;
   $('#printDocument').insertAdjacentHTML('beforeend',comparison+'<h2>Reviewed operation</h2><p>'+esc(allowed?fixed(allowed.energy)+' kWh thermal energy, '+pct(allowed.duty)+' equipment active time, daily ratio '+fixed(allowed.ratio,3)+'.':'The review is incomplete. No authorised operation is inferred.')+'</p><h2>Clinic criteria</h2><p>'+esc('R < '+protocol.ratio+', D > '+pct(protocol.duty)+', N ≤ '+protocol.controls+'. These are authored institutional rules, not validated health thresholds.')+'</p>');
-  window.print();
+  $('#printDocument').insertAdjacentHTML('beforeend','<h2>Follow-up proposal</h2><p>One week after an agreed change, compare a new room record and the resident’s account of the experience. This follow-up has not been scheduled or tested.</p>');window.print();
 }
 
 $$('[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.view==='room'||b.dataset.view==='plan')openPane('case',{keepPlan:true,keepView:true});setView(b.dataset.view);});
@@ -220,7 +220,7 @@ $$('[data-pane]').forEach(b=>b.onclick=()=>openPane(b.dataset.pane,{keepView:tru
 $$('[data-part]').forEach(b=>b.onclick=()=>inspect(b.dataset.part));
 $$('[data-neighbourhood-camera]').forEach(b=>b.onclick=()=>{$$('[data-neighbourhood-camera]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));send({type:'clinic-neighbourhood-camera',camera:b.dataset.neighbourhoodCamera});});
 $$('[data-inspect]').forEach(b=>b.onclick=()=>inspect(b.dataset.inspect));
-$('#home').onclick=e=>{e.preventDefault();openPane('case',{keepView:true});setView('neighbourhood');};
+$('#home').onclick=e=>{e.preventDefault();openPlace('clinic');};
 $('#returnRoom').onclick=()=>openPane('case');$('#startComparison').onclick=$('#classifyToCompare').onclick=()=>openPane('comparison');$('#startReview').onclick=()=>openPane('review',{keepPlan:true});$('#startClassification').onclick=()=>openPane('classification',{keepView:true});
 $('#openNetwork').onclick=()=>{setView('network');openRelation('room');};
 $('#relationLayers').innerHTML=RELATION_LAYERS.map(l=>'<button data-relation-layer="'+l.id+'" aria-pressed="'+(l.id==='all')+'"><i style="background:'+l.colour+'"></i>'+l.name+'</button>').join('');
@@ -260,13 +260,27 @@ $('#csvInput').onchange=async e=>{
 $('#restoreRecord').onclick=()=>{stop();record=makeDemo();recordName='Seven-day demonstration';imported=false;cursor=56;selectedPlan='record';resetReview();recompute();$('#importStatus').textContent='Restored the generated demonstration record.';};
 addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame.contentWindow)return;
-  if(e.data?.type==='clinic-viewer-ready'){spatialReady=true;$('#sceneStatus').textContent='Constructed spatial study';setView(view);updateCursor();}
+  if(e.data?.type==='clinic-viewer-ready'){spatialReady=true;$('#sceneStatus').textContent='Constructed spatial study';setView(view);if(pane==='admission')send({type:'clinic-neighbourhood-camera',camera:'entrance'});updateCursor();}
   if(e.data?.type==='clinic-viewer-error')$('#sceneStatus').textContent=e.data.message;
   if(e.data?.type==='clinic-spatial-view'&&view!==e.data.view)setView(e.data.view);
   if(e.data?.type==='clinic-place')openPlace(e.data.place);
   if(e.data?.type==='clinic-relation')openRelation(e.data.node);
   if(e.data?.type==='clinic-part'){openPane('case',{keepPlan:true,keepView:true});$$('[data-part]').forEach(b=>b.classList.toggle('active',b.dataset.part===e.data.part));}
 });
+
+function renderDischarge(){
+  const c=study.conditions.reviewed,judgement=classify(study.recordMetrics,audit,protocol);
+  const opening=review.resident==='accepted'&&review.opening==='granted';
+  const thermostat=review.resident==='accepted'&&review.thermostat==='granted';
+  const status=!c?'Permission review incomplete':review.resident==='declined'?'Resident declines the proposed change':'Conditional operating prescription';
+  const plan=!c?'No operation is authorised by this rehearsal.':review.resident==='declined'?'Existing operation is retained.':(opening?'Opening from '+hour(settings.morningStart)+' to '+hour(settings.morningEnd)+' and '+hour(settings.eveningStart)+' to '+hour(settings.eveningEnd)+', when outdoor air is between 14°C and 26°C.':'Scheduled opening is not included.')+' '+(thermostat?'Thermostat range widened to '+fixed(settings.deadband)+' K total around 22°C.':'Existing thermostat range retained.');
+  $('#caseOutcome').innerHTML='<p class="appointment-kicker">Consultation record</p><h2 class="outcome-title">'+status+'</h2><p class="case-intro">The resident’s concern remains part of the case. A modelled temperature change cannot establish a health outcome.</p><h3>Clinic assessment</h3><p>'+esc(judgement.title)+'. This judgement follows the Clinic’s current trial criteria.</p><h3>Agreed operation</h3><p>'+esc(plan)+'</p>'+(c?'<dl class="room-register"><div><dt>Predicted thermal energy</dt><dd>'+fixed(c.metrics.energy)+' kWh</dd></div><div><dt>Equipment active time</dt><dd>'+pct(c.metrics.duty)+'</dd></div></dl>':'')+'<h3>Responsibilities</h3><p>The resident may accept or decline. The building authority records opening and thermostat permissions. Hardware and maintenance conditions still require a site check.</p>'+(review.note?'<blockquote class="review-note">'+esc(review.note)+'</blockquote>':'')+'<h3>Follow-up proposal</h3><p>One week after an agreed change, compare a new room record and the resident’s account of the experience. This follow-up has not been scheduled or tested.</p><p class="quiet">Fictional case. Generated source data. No independently validated physical prediction or medical outcome.</p>';
+}
+$('#beginConsultation').onclick=()=>openPane('case');
+$('#finishConsultation').onclick=()=>openPane('discharge',{keepPlan:true,keepView:true});
+$('#printOutcome').onclick=printCase;$('#exportOutcome').onclick=exportCase;
+$('#reviseReview').onclick=()=>openPane('review',{keepPlan:true,keepView:true});
+
 new ResizeObserver(()=>{if(study)drawPlot();}).observe($('#temperaturePlot'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-setView(view);recompute();
+setView(view);recompute();openPlace('clinic');

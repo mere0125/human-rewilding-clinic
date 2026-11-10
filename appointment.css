@@ -1,0 +1,27 @@
+
+/* A consultation uses the same room model; entry and discharge read as case papers. */
+.desk-nav{gap:0;display:grid;grid-template-columns:repeat(6,1fr);padding:12px 15px}
+.desk-nav button{padding:8px 1px;font-size:10px;text-align:center}
+.desk-nav button[aria-pressed=true]{box-shadow:inset 0 -2px #a6bc91}
+.appointment-kicker{font-size:11px;letter-spacing:0;margin:0 0 18px}
+.patient-voice{margin:0 0 24px;padding:0;font-size:27px;line-height:1.22;letter-spacing:-.8px;font-weight:400;border:0}
+.appointment-scope{font-size:12px;line-height:1.65;margin:22px 0}
+.clinic-setting{margin-top:26px}.clinic-setting p{font-size:12px;line-height:1.65}
+#pane-discharge .outcome-title{font-size:25px;font-weight:400;letter-spacing:-.6px;line-height:1.18;margin:0 0 20px}
+#pane-discharge h3{font-size:12px;margin:22px 0 8px;font-weight:600}
+#pane-discharge p{font-size:12px;line-height:1.65}
+#pane-discharge .quiet{font-size:10px}
+#pane-discharge .review-note{font-size:12px;line-height:1.6;margin:20px 0;padding:12px 0;border-top:1px solid #c4cbbb;border-bottom:1px solid #c4cbbb}
+#finishConsultation{margin-top:20px;width:100%}
+body[data-pane=admission] .case-desk,body[data-pane=discharge] .case-desk{background:#f4f3e9;color:#2b3c30;border-color:#b4bdad}
+body[data-pane=admission] .desk-heading,body[data-pane=discharge] .desk-heading,body[data-pane=admission] .desk-nav,body[data-pane=discharge] .desk-nav{background:#f4f3e9;color:#2b3c30}
+body[data-pane=admission] .desk-heading h1,body[data-pane=discharge] .desk-heading h1{color:#2b3c30}
+body[data-pane=admission] .case-intro,body[data-pane=discharge] .case-intro,body[data-pane=admission] .room-register dd,body[data-pane=discharge] .room-register dd{color:#405544}
+body[data-pane=admission] .desk-nav button[aria-pressed=true],body[data-pane=discharge] .desk-nav button[aria-pressed=true]{color:#2b3c30}
+body[data-pane=admission] .primary-action,body[data-pane=discharge] .primary-action{background:#3f624c;color:#f4f3e9;border:1px solid #3f624c}
+body[data-pane=admission] .quiet,body[data-pane=discharge] .quiet,body[data-pane=admission] .room-register dt,body[data-pane=discharge] .room-register dt{color:#687460}
+body[data-pane=admission] .room-register>div,body[data-pane=discharge] .room-register>div{border-color:#c6cebd}
+body[data-pane=admission] .record-table{opacity:.38;pointer-events:none}
+body[data-pane=admission] .interval-strip{display:none}
+body[data-pane=admission] .desk-footer,body[data-pane=discharge] .desk-footer{background:#e9ecdf;color:#64715e}
+@media(max-width:760px){.desk-nav{grid-template-columns:repeat(6,1fr)}.patient-voice{font-size:26px}.case-desk .desk-content{padding:20px}body[data-pane=admission] .record-table{display:none}}
