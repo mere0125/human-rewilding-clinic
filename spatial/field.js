@@ -8,10 +8,10 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {loadSurfaces} from './surfaces.js';
-import {makeRoom} from './room.js';
-import {makeClinic} from './clinic.js?v=14';
-import {CLINIC} from '../clinic-spec.mjs?v=14';
-import {makeNeighbourhood} from './neighbourhood.js';
+import {makeRoom} from './room.js?v=20';
+import {makeClinic} from './clinic.js?v=20';
+import {CLINIC} from '../clinic-spec.mjs?v=20';
+import {makeNeighbourhood} from './neighbourhood.js?v=20';
 import {CASE} from '../case.mjs';
 import {createRelationView} from './relation-view.js';
 
@@ -58,8 +58,19 @@ const relations=createRelationView(node=>tell({type:'clinic-relation',node}));
 function visitNeighbourhood(id){
   neighbourhoodCamera=id;
   if(!ready)return;orbit.enabled=true;orbit.minDistance=.7;orbit.maxDistance=90;orbit.maxPolarAngle=Math.PI*.49;
-  const poses={courtyard:{eye:[12.0,6.4,8.8],at:[3.0,1.8,-.2],fov:50},entrance:{eye:[7.7,1.75,11.4],at:[5.05,1.45,8.4],fov:56},nursery:{eye:[-1.6,2.1,-3.8],at:[-4.8,1.3,-7.3],fov:56}};
-  if(id==='overview'){camera.fov=40;orbit.target.copy(neighbourhood.centre);const fit=Math.max(1,1.15/camera.aspect);camera.position.copy(neighbourhood.centre).add(new THREE.Vector3(31,28,38).multiplyScalar(fit));}
+  const poses={courtyard:{eye:[12.0,6.4,8.8],at:[3.0,1.8,-.2],fov:50},entrance:{eye:[8.8,2.5,15.2],at:[5.15,1.6,7.65],fov:50},nursery:{eye:[-1.6,2.1,-3.8],at:[-4.8,1.3,-7.3],fov:56}};
+  if(id==='overview'){
+    camera.fov=40;
+    const bounds=new THREE.Box3().setFromObject(neighbourhood.root),centre=bounds.getCenter(new THREE.Vector3());
+    const direction=new THREE.Vector3(31,28,38).normalize(),right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction).normalize();
+    const up=new THREE.Vector3().crossVectors(direction,right).normalize(),tanV=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),tanH=tanV*camera.aspect;
+    let distance=0;
+    for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+      const p=new THREE.Vector3(x,y,z).sub(centre);
+      distance=Math.max(distance,p.dot(direction)+Math.max(Math.abs(p.dot(right))/tanH,Math.abs(p.dot(up))/tanV));
+    }
+    orbit.target.copy(centre);camera.position.copy(centre).addScaledVector(direction,distance*1.10);
+  }
   else{const p=poses[id]||poses.courtyard;camera.fov=p.fov;camera.position.set(...p.eye);orbit.target.set(...p.at);if(camera.aspect<1){camera.position.sub(orbit.target).multiplyScalar(1.3).add(orbit.target);}}
   camera.updateProjectionMatrix();orbit.update();
   refreshWorldLabels();
@@ -170,7 +181,12 @@ async function start(){
   const studio=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);
   clinicEnvironment=pmrem.fromScene(studio,.04).texture;studio.dispose();pmrem.dispose();
   [room,neighbourhood,clinic]=await Promise.all([makeRoom(materials),makeNeighbourhood(materials,renderer),makeClinic(materials)]);
-  scene.add(room.root,neighbourhood.root,clinic.root);ready=true;setView(view);if(sample)applySample(sample);
+  scene.add(room.root,neighbourhood.root,clinic.root);
+  // Scene-derived measurements keep layout QA independent of camera framing.
+  // They contain geometry only, not patient or environmental observations.
+  canvas.dataset.clinicLayout=JSON.stringify(clinic.root.userData.layout||{});
+  canvas.dataset.roomLayout=JSON.stringify(room.root.userData.layout||{});
+  ready=true;setView(view);if(sample)applySample(sample);
   $('#loading').classList.add('done');$('#loading').setAttribute('aria-hidden','true');setTimeout(()=>{$('#loading').hidden=true;},650);tell({type:'clinic-viewer-ready'});
 }
 start().catch(error=>{console.error(error);$('#loading').innerHTML='<strong>The room could not finish loading</strong><span class="fail">A model or surface resource did not arrive. Reload the view to try again.</span><button class="retry">Reload the room</button>';$('.retry').onclick=()=>location.reload();tell({type:'clinic-viewer-error',message:'A spatial resource could not load.'});});

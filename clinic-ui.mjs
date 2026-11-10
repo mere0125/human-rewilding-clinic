@@ -1,6 +1,6 @@
-import {CLINIC} from './clinic-spec.mjs?v=14';
+import {CLINIC} from './clinic-spec.mjs?v=20';
 import {createSession,transition,visibleRecord,canEditCriteria} from './clinic-session.mjs';
-import {renderClinicPlan} from './clinic-plan.mjs?v=14';
+import {renderClinicPlan} from './clinic-plan.mjs?v=20';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=(v,n=1)=>Number.isFinite(v)?v.toFixed(n):'Unknown';

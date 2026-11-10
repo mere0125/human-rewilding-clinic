@@ -1,4 +1,4 @@
-import {CLINIC} from './clinic-spec.mjs?v=14';
+import {CLINIC} from './clinic-spec.mjs?v=20';
 
 // The plan uses the architectural register in metres. Furniture footprints
 // follow spatial/clinic.js; fine mechanical and textile detail is simplified.
@@ -13,6 +13,8 @@ export function renderClinicPlan(selected='reception') {
   const top=Y(-CLINIC.depth/2),bottom=Y(CLINIC.depth/2);
   const boundary=CLINIC.boundary;
   const support=CLINIC.bodySupport;
+  const consultation=CLINIC.furniture.consultation,operations=CLINIC.furniture.operations,caseWindow=CLINIC.furniture.caseWindow;
+  const faceTable=(c,t)=>Math.atan2(t[0]-c[0],t[2]-c[1]);
   const platformWidth=support.width*unit,platformLength=support.length*unit;
   const platformLabelY=Y(support.centre[2])+platformLength/2+22;
   const portalLeft=X(-boundary.width/2),portalRight=X(boundary.width/2),portalY=Y(boundary.centre[2]);
@@ -70,7 +72,7 @@ export function renderClinicPlan(selected='reception') {
     <!-- Bolted frame plates, readable at the scale of the plan. -->
     ${[-7.8,-2.8,2.8,7.8].flatMap(x=>[-5.4,5.4].map(z=>`<rect x="${f(X(x)-4)}" y="${f(Y(z)-4)}" width="8" height="8" fill="#617562"/>`)).join('')}
     <!-- Straight service partitions share the 3D model's 6.65 metre extent. -->
-    ${[-2.8,2.8].map(x=>`<path d="M${f(X(x))} ${f(Y(-4.375))}V${f(Y(2.275))}" stroke="#a3b3a3" stroke-width="9" fill="none"/><path d="M${f(X(x))} ${f(Y(-4.375))}V${f(Y(2.275))}" stroke="#eef2e8" stroke-width="5" fill="none"/>`).join('')}
+    ${[[-2.8,-4.375,2.275],[2.8,-4.375,-.05],[2.8,1.25,2.275]].map(([x,a,b])=>`<path d="M${f(X(x))} ${f(Y(a))}V${f(Y(b))}" stroke="#a3b3a3" stroke-width="9" fill="none"/><path d="M${f(X(x))} ${f(Y(a))}V${f(Y(b))}" stroke="#eef2e8" stroke-width="5" fill="none"/>`).join('')}
     <!-- Table, chairs and consent sheet follow the current architectural model. -->
     <g transform="translate(${f(X(-5.06))} ${f(Y(-.40))}) rotate(${f(-.10*180/Math.PI)})">
       <rect x="-48.38" y="-25.20" width="96.75" height="50.40" rx="6.75" fill="url(#planMetalHatch)" stroke="#6e806f" stroke-width="1.1"/>
@@ -78,8 +80,7 @@ export function renderClinicPlan(selected='reception') {
       <g transform="translate(-16.2 0) rotate(-4.58)"><rect x="-9.9" y="-12.6" width="19.8" height="25.2" fill="#f8f7ef" stroke="#8d9c85" stroke-width=".65"/><path d="M-6-7H6M-6-2H6M-6 3H6M-6 8H1" class="fine"/></g>
       <rect x="20.25" y="-9.75" width="17.10" height="8.70" rx="1.4" fill="#788c75" stroke="#617661" stroke-width=".7"/>
     </g>
-    ${chair(-5.8,.85,-.28)}
-    ${chair(-4.13,-1.62,Math.PI+.16)}
+    ${consultation.chairs.map(c=>chair(c[0],c[1],faceTable(c,consultation.centre))).join('')}
     <rect x="${f(X(-6.85)-14.625)}" y="${f(Y(-3.7)-40.5)}" width="29.25" height="81" rx="7" fill="#bbc9b0" stroke="#7d9276" stroke-width="1"/>
     <text x="${f(X(-5.06))}" y="${f(Y(-.40)+88)}" text-anchor="middle" class="label">Shared consultation table</text>
     <text x="${f(X(-5.06))}" y="${f(Y(-.40)+108)}" text-anchor="middle" class="small">Consent recorded on the table</text>
@@ -107,15 +108,15 @@ export function renderClinicPlan(selected='reception') {
       <rect x="-45" y="9" width="26.1" height="9" rx="1" fill="#ced8c4" stroke="#8b9c81" stroke-width=".6"/>
       <rect x="47.7" y="-2.7" width="18" height="23.4" rx="1" fill="#e4eadb" stroke="#8b9c81" stroke-width=".6"/>
     </g>
-    ${chair(5.48,.4,.06)}
+    ${chair(operations.chair[0],operations.chair[1],faceTable(operations.chair,operations.centre))}
     ${Array.from({length:5},(_,i)=>`<rect x="${f(X(3.35+i*.72)-14.625)}" y="${f(Y(-4.72)-13.95)}" width="29.25" height="27.9" rx=".765" fill="url(#planMetalHatch)" stroke="#7d8f7b" stroke-width=".8"/>`).join('')}
     <text x="${f(X(5.05))}" y="${f(Y(-1.55)-48)}" text-anchor="middle" class="label">Operation and revision desk</text>
-    <!-- The patient-facing screen is centred at x 2.81 and z 0.60. -->
-    <path d="M${f(X(2.81)-5)} ${f(Y(.6-.57))}V${f(Y(.6+.57))}" stroke="#47664e" stroke-width="3"/>
-    <rect x="${f(X(2.81)-14)}" y="${f(Y(.6-.57))}" width="14" height="51.3" fill="#e4eadc" stroke="#758b71"/>
-    <path d="M${f(X(2.81)+5)} ${f(Y(.6))}L${f(X(2.81)+35)} ${f(Y(.6)+35)}" class="fine"/>
-    <text x="${f(X(2.81)+43)}" y="${f(Y(.6)+43)}" class="label">Own-case window</text>
-    <text x="${f(X(2.81)+43)}" y="${f(Y(.6)+61)}" class="small">Readable from the trial</text>
+    <!-- The screen projects into a true opening in the right membrane. -->
+    <path d="M${f(X(caseWindow.frontX))} ${f(Y(caseWindow.centre[2]-.57))}V${f(Y(caseWindow.centre[2]+.57))}" stroke="#47664e" stroke-width="3"/>
+    <rect x="${f(X(caseWindow.frontX)-9)}" y="${f(Y(caseWindow.centre[2]-.57))}" width="14" height="51.3" fill="#e4eadc" stroke="#758b71"/>
+    <path d="M${f(X(caseWindow.centre[0])+5)} ${f(Y(.6))}L${f(X(caseWindow.centre[0])+35)} ${f(Y(.6)+35)}" class="fine"/>
+    <text x="${f(X(caseWindow.centre[0])+43)}" y="${f(Y(.6)+43)}" class="label">Own-case window</text>
+    <text x="${f(X(caseWindow.centre[0])+43)}" y="${f(Y(.6)+61)}" class="small">Readable from the trial</text>
     <!-- Public and staff access are intentionally distinct. -->
     <path d="M${f(X(-5.65))} ${f(bottom+20)}V${f(Y(4.5))}H${f(X(-.3))}V${f(Y(2.1))}" class="route"/>
     <path d="M${f(X(6))} ${f(bottom+20)}V${f(bottom-47)}H${f(X(6.9))}M${f(X(6.9))} ${f(bottom-100)}V${f(Y(.6))}" class="secondary-route"/>

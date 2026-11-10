@@ -1,4 +1,4 @@
-import {mountClinic} from './clinic-ui.mjs?v=14';
+import {mountClinic} from './clinic-ui.mjs?v=20';
 import {CASE,volume,clearArea} from './case.mjs';
 import {makeDemo,metrics,classify,simulate,toCSV,parseCSV,HOUR} from './engine.mjs';
 import {PLANS,EMPTY_REVIEW,LOCAL_PLACES,initialSettings,calculateStudy} from './study.mjs';
@@ -268,7 +268,9 @@ addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame.contentWindow)return;
   if(e.data?.type==='clinic-viewer-ready'){spatialReady=true;$('#sceneStatus').textContent='Constructed spatial study';setView(view);if(view==='clinic')clinicSpace?.sync();else if(pane==='admission')send({type:'clinic-neighbourhood-camera',camera:'entrance'});updateCursor();}
   if(e.data?.type==='clinic-viewer-error')$('#sceneStatus').textContent=e.data.message;
-  if(e.data?.type==='clinic-spatial-view'&&view!==e.data.view)setView(e.data.view);
+  // Spatial-view replies acknowledge a requested camera. An older reply must
+  // not undo a newer navigation choice; scene clicks send explicit place or
+  // part actions below instead.
   if(e.data?.type==='clinic-place')openPlace(e.data.place);
   if(e.data?.type==='clinic-patient-pause')clinicSpace?.pauseTrial();
   if(e.data?.type==='clinic-view-image'&&e.data.bytes instanceof ArrayBuffer)download(view==='clinic'?'Clinic-spatial-study.png':'Room-001-'+view+'.png',e.data.bytes,'image/png');
